@@ -64,7 +64,11 @@ function PlaylistAndMedia() {
         if (selectedPlaylist) {
             const updatedPlaylist = playlists.find(p => p.id === selectedPlaylist.id);
             if (updatedPlaylist && updatedPlaylist.Media) {
-                const itemsWithCorrectData = updatedPlaylist.Media.map(media => ({ ...media, duration: media.PlaylistMedia.duration }));
+                const itemsWithCorrectData = updatedPlaylist.Media.map(media => ({
+                    ...media,
+                    url: media.url || `${API_BASE_URL}/uploads/${media.filename}`,
+                    duration: media.PlaylistMedia?.duration || 5
+                }));
                 setPlaylistItems(itemsWithCorrectData);
             } else {
                 setPlaylistItems([]);
@@ -161,7 +165,7 @@ function PlaylistAndMedia() {
                     );
                     setSelectedPlaylist(null);
                     fetchData();
-                } catch (error) {
+                } catch {
                     MySwal.fire(
                         'Gagal!',
                         'Terjadi kesalahan saat menghapus playlist.',
@@ -311,7 +315,7 @@ function PlaylistAndMedia() {
             });
             toast.success('Perubahan berhasil disimpan!');
             fetchData();
-        } catch (error) {
+        } catch {
             toast.error('Gagal menyimpan perubahan.');
         }
     };
