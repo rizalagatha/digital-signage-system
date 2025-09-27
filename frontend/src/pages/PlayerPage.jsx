@@ -9,7 +9,7 @@ import { useParams } from "react-router-dom";
 import { io } from "socket.io-client";
 import debounce from "lodash/debounce";
 
-const API_BASE_URL = import.meta.env.VITE_SERVER_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function PlayerPage() {
   const { deviceId } = useParams();
