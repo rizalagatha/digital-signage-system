@@ -347,12 +347,10 @@ app.put("/api/devices/heartbeat/:deviceId", async (req, res) => {
 });
 
 // === SINKRONISASI DATABASE & JALANKAN SERVER ===
-sequelize.sync({ alter: true }).then(() => {
+sequelize.sync().then(() => {
+  // tanpa alter
   console.log("Database & tabel berhasil disinkronkan.");
-  // Gunakan server.listen, bukan app.listen
   server.listen(port, () => {
-    console.log(
-      `Server (termasuk Socket.io) berjalan di http://localhost:${port}`
-    );
+    console.log(`Server berjalan di http://localhost:${port}`);
   });
 });
