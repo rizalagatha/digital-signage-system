@@ -1,35 +1,35 @@
 // src/pages/LoginPage.jsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;  
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function LoginPage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   // 1. Ubah fungsi ini untuk menerima 'event'
   const handleLogin = async (event) => {
     event.preventDefault(); // 2. Mencegah halaman refresh saat form disubmit
-    setMessage('');
-    
+    setMessage("");
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
       const data = await response.json();
       if (response.ok) {
-        localStorage.setItem('isLoggedIn', 'true');
-        navigate('/');
+        localStorage.setItem("isLoggedIn", "true");
+        navigate("/");
       } else {
         setMessage(data.message);
       }
     } catch (error) {
-      setMessage('Tidak bisa terhubung ke server backend.');
+      setMessage("Tidak bisa terhubung ke server backend.", error);
     }
   };
 
@@ -41,11 +41,21 @@ function LoginPage() {
         {message && <p className="error-message">{message}</p>}
         <div className="form-group">
           <label>Username</label>
-          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
         </div>
         <div className="form-group">
           <label>Password</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
         </div>
         {/* 4. Pastikan tombol memiliki type="submit" */}
         <button type="submit">Login</button>
