@@ -40,7 +40,7 @@ const io = new Server(server, {
     origin: "*", // Izinkan koneksi dari mana saja
   },
 });
-const port = 3000;
+const port = 3001;
 
 app.use(cors({}));
 app.use(express.json());
