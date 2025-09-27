@@ -19,6 +19,22 @@ const RegisterDeviceModal = ({ isOpen, onClose, onRegister }) => {
     onClose();
   };
 
+  // Tambahkan handler untuk menutup modal saat ESC ditekan
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.keyCode === 27) onClose();
+    };
+    if (isOpen) {
+      document.addEventListener("keydown", handleEsc);
+      // Cegah scroll pada body saat modal terbuka
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.removeEventListener("keydown", handleEsc);
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
@@ -38,6 +54,7 @@ const RegisterDeviceModal = ({ isOpen, onClose, onRegister }) => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              autoFocus
             />
           </div>
           <div className="form-group">
@@ -51,9 +68,11 @@ const RegisterDeviceModal = ({ isOpen, onClose, onRegister }) => {
               required
             />
           </div>
-          <button type="submit" className="submit-btn modal-submit-btn">
-            Daftarkan Perangkat
-          </button>
+          <div className="form-actions">
+            <button type="submit" className="submit-btn">
+              Daftarkan Perangkat
+            </button>
+          </div>
         </form>
       </div>
     </div>
@@ -122,6 +141,7 @@ function DeviceManager() {
       <div className="device-manager-container">
         <div className="page-header">
           <h1>Manajemen Perangkat TV</h1>
+          {/* Pindahkan button langsung ke header tanpa wrapper form-actions */}
           <button
             onClick={() => setIsModalOpen(true)}
             className="add-device-btn"

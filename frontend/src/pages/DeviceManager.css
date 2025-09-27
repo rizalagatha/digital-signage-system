@@ -1,4 +1,8 @@
 /* --- Global Styling & Layout --- */
+body {
+  margin: 0;
+}
+
 .device-manager-container {
   padding: 24px 32px;
   background-color: #f8f9fa;
@@ -9,19 +13,19 @@
 
 .page-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between; /* Ubah dari gap ke space-between */
   margin-bottom: 24px;
-  gap: 20px; /* Memberi jarak antara judul dan tombol */
 }
 
 h1 {
   font-size: 28px;
   color: #202124;
   font-weight: 600;
+  margin: 0;
 }
 
-/* === PERBAIKAN 1: Tombol Header === */
+/* --- Perbaikan Tombol Header --- */
 .add-device-btn {
   padding: 10px 20px;
   border: none;
@@ -31,10 +35,12 @@ h1 {
   cursor: pointer;
   font-size: 15px;
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: background-color 0.2s, box-shadow 0.2s;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  white-space: nowrap; /* Mencegah teks turun baris */
-  flex-shrink: 0; /* Mencegah tombol menyusut */
+  width: auto; /* Pastikan width auto */
+  min-width: fit-content; /* Minimum sesuai konten */
 }
 .add-device-btn:hover {
   background-color: #185abc;
@@ -47,6 +53,7 @@ h1 {
   padding: 24px;
   box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3),
     0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  margin-bottom: 24px;
 }
 
 .card-header {
@@ -54,23 +61,40 @@ h1 {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
-/* ... (Sisa styling card dan tabel tetap sama) ... */
+.card-header h2 {
+  font-size: 20px;
+  margin: 0;
+  color: #3c4043;
+}
+
 .search-input {
   padding: 10px 16px;
   border: 1px solid #dadce0;
   border-radius: 8px;
   width: 320px;
   font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
+.search-input:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+/* --- Table Styling --- */
 .table-wrapper {
   overflow-x: auto;
 }
+
 table {
   width: 100%;
   border-collapse: collapse;
 }
+
 th,
 td {
   padding: 14px 16px;
@@ -78,21 +102,27 @@ td {
   border-bottom: 1px solid #e8eaed;
   vertical-align: middle;
 }
+
 thead th {
   font-size: 13px;
   font-weight: 600;
   color: #5f6368;
+  background-color: #f8f9fa;
 }
+
 tbody tr:last-child td {
   border-bottom: none;
 }
+
 tbody tr:hover {
   background-color: #f7f9fc;
 }
+
 .device-name {
   font-weight: 500;
   color: #202124;
 }
+
 code {
   background-color: #f1f3f4;
   padding: 3px 8px;
@@ -101,6 +131,7 @@ code {
   font-size: 13px;
   border: 1px solid #e8eaed;
 }
+
 .status-badge {
   display: inline-block;
   padding: 4px 12px;
@@ -109,6 +140,7 @@ code {
   font-weight: 500;
   color: white;
 }
+
 .playlist-select {
   width: 100%;
   padding: 8px;
@@ -116,6 +148,7 @@ code {
   border-radius: 6px;
   background-color: #fff;
 }
+
 .delete-btn {
   background: none;
   border: none;
@@ -128,78 +161,94 @@ code {
   color: #d93025;
 }
 
-/* === PERBAIKAN 2: Modal Styling === */
+/* --- Perbaikan Modal Styling --- */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(32, 33, 36, 0.6); /* Latar lebih gelap */
-  backdrop-filter: blur(4px); /* Efek blur modern */
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999;
   animation: fadeIn 0.3s ease;
 }
 
 .modal-content {
-  background-color: white;
+  background: #ffffff !important; /* Force white background */
+  color: #202124 !important; /* Force dark text */
   padding: 32px;
   border-radius: 16px;
-  width: 100%;
-  max-width: 500px;
+  width: 420px; /* Lebih kecil karena layout vertikal */
+  min-width: 350px;
+  max-width: 90vw;
   position: relative;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.3s ease;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 10000; /* Pastikan konten modal di atas overlay */
 }
+
 .modal-content h2 {
   margin-top: 0;
   margin-bottom: 24px;
   font-size: 22px;
-  color: #202124;
+  color: #202124 !important; /* Force dark color */
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
 }
 
 .modal-close {
   position: absolute;
   top: 16px;
   right: 16px;
-  background: #f1f3f4;
+  background: #f1f3f4 !important;
   border: none;
   border-radius: 50%;
   width: 32px;
   height: 32px;
-  font-size: 20px;
+  font-size: 18px;
   cursor: pointer;
-  color: #5f6368;
+  color: #5f6368 !important;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s, transform 0.2s;
+  z-index: 10001;
 }
 .modal-close:hover {
-  background-color: #e8eaed;
+  background-color: #e8eaed !important;
   transform: rotate(90deg);
 }
 
 .register-form .form-group {
   display: flex;
   flex-direction: column;
-  margin-bottom: 20px;
+  margin-bottom: 24px; /* Tambah jarak antar form group */
 }
+
 .register-form label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #5f6368;
+  font-size: 15px; /* Sedikit lebih besar */
+  font-weight: 600; /* Lebih tebal */
+  color: #3c4043 !important; /* Warna lebih gelap */
   margin-bottom: 8px;
+  font-family: "Inter", sans-serif;
 }
+
 .register-form input {
-  padding: 12px;
+  padding: 14px 16px; /* Padding lebih besar */
   border: 1px solid #dadce0;
   border-radius: 8px;
   font-size: 15px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: "Inter", sans-serif;
+  background-color: #ffffff !important; /* Force white background */
+  color: #202124 !important; /* Force dark text */
+  width: 100%; /* Full width */
+  box-sizing: border-box;
 }
 .register-form input:focus {
   outline: none;
@@ -207,21 +256,35 @@ code {
   box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
 }
 
-.modal-submit-btn {
+.register-form input::placeholder {
+  color: #9aa0a6 !important; /* Force placeholder color */
+}
+
+.form-actions {
+  display: flex;
+  justify-content: center; /* Center button */
+  margin-top: 32px; /* Jarak lebih besar dari form */
   width: 100%;
-  padding: 12px;
-  margin-top: 16px;
+}
+
+.form-actions .submit-btn {
+  padding: 14px 32px; /* Padding lebih besar */
   background-color: #1a73e8;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 16px;
-  font-weight: 500;
-  transition: background-color 0.2s;
+  font-size: 16px; /* Font lebih besar */
+  font-weight: 600; /* Lebih tebal */
+  font-family: "Inter", sans-serif;
+  white-space: nowrap;
+  transition: background-color 0.2s, box-shadow 0.2s;
+  width: 100%; /* Full width untuk tampilan yang lebih baik */
+  min-width: fit-content;
 }
-.modal-submit-btn:hover {
+.form-actions .submit-btn:hover {
   background-color: #185abc;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* Animasi untuk Modal */
@@ -242,4 +305,54 @@ code {
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+/* Media Query untuk Responsivitas Modal */
+@media (max-width: 640px) {
+  .modal-content {
+    width: 95vw;
+    min-width: unset;
+    margin: 20px;
+    padding: 24px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .add-device-btn {
+    width: 100%;
+    justify-self: stretch;
+  }
+}
+
+/* Override untuk memastikan modal selalu putih */
+.modal-overlay * {
+  box-sizing: border-box;
+}
+
+.modal-content,
+.modal-content *:not(.add-device-btn):not(.submit-btn) {
+  background-color: #ffffff !important;
+}
+
+.modal-content h2,
+.modal-content label,
+.modal-content input {
+  color: #202124 !important;
+}
+
+/* Khusus untuk dark mode override */
+[data-theme="dark"] .modal-content,
+.dark .modal-content {
+  background-color: #ffffff !important;
+  color: #202124 !important;
+}
+
+[data-theme="dark"] .modal-content *:not(.add-device-btn):not(.submit-btn),
+.dark .modal-content *:not(.add-device-btn):not(.submit-btn) {
+  background-color: #ffffff !important;
+  color: #202124 !important;
 }
