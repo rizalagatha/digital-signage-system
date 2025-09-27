@@ -16,29 +16,51 @@ function PlayerPage() {
   const [playlist, setPlaylist] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState("");
-  const [isFading, setIsFading] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  // State baru untuk mencegah transisi saat data sedang dimuat
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const videoRef = useRef(null);
+  const imageTimerRef = useRef(null); // Ref untuk menyimpan timer gambar
 
-  const fetchPlaylist = useCallback(async () => {
-    try {
-      setError("");
-      const response = await fetch(`${API_BASE_URL}/api/player/${deviceId}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Playlist tidak ditemukan");
+  const fetchPlaylist = useCallback(
+    async (isUpdate = false) => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/player/${deviceId}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Playlist tidak ditemukan");
+        }
+        const newPlaylistData = await response.json();
+
+        setPlaylist((prevPlaylist) => {
+          // Jika ini adalah update dari socket.io, jangan reset indeks jika playlist tidak berubah
+          if (
+            isUpdate &&
+            JSON.stringify(prevPlaylist?.Media) ===
+              JSON.stringify(newPlaylistData.Media)
+          ) {
+            return prevPlaylist;
+          }
+          // Jika playlist baru atau berbeda, reset ke awal
+          setCurrentIndex(0);
+          return newPlaylistData;
+        });
+        setError("");
+      } catch (err) {
+        console.error("Gagal memuat playlist:", err);
+        setError(err.message);
+        setPlaylist(null);
       }
-      const playlistData = await response.json();
-      setPlaylist(playlistData);
-    } catch (err) {
-      console.error("Gagal memuat playlist:", err);
-      setError(err.message);
-      setPlaylist(null);
-    }
-  }, [deviceId]);
+    },
+    [deviceId]
+  );
 
   const debouncedFetchPlaylist = useMemo(
-    () => debounce(fetchPlaylist, 2000, { leading: false, trailing: true }),
+    () =>
+      debounce(() => fetchPlaylist(true), 2000, {
+        leading: false,
+        trailing: true,
+      }),
     [fetchPlaylist]
   );
 
@@ -53,6 +75,7 @@ function PlayerPage() {
       console.log("Sinyal update diterima, memuat ulang playlist...");
       debouncedFetchPlaylist();
     });
+
     const sendHeartbeat = () => {
       fetch(`${API_BASE_URL}/api/devices/heartbeat/${deviceId}`, {
         method: "PUT",
@@ -60,32 +83,50 @@ function PlayerPage() {
     };
     sendHeartbeat();
     const heartbeatInterval = setInterval(sendHeartbeat, 60000);
-    const playlistInterval = setInterval(fetchPlaylist, 300000);
+
     return () => {
       debouncedFetchPlaylist.cancel();
-      clearInterval(playlistInterval);
       clearInterval(heartbeatInterval);
       socket.disconnect();
     };
   }, [deviceId, fetchPlaylist, debouncedFetchPlaylist]);
 
+  // Fungsi untuk pindah ke item berikutnya
   const goToNextItem = useCallback(() => {
-    if (!playlist || !playlist.Media || playlist.Media.length === 0) return;
+    if (
+      !playlist ||
+      !playlist.Media ||
+      playlist.Media.length === 0 ||
+      isTransitioning
+    )
+      return;
 
-    setIsFading(true);
+    setIsTransitioning(true);
     setTimeout(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % playlist.Media.length);
-      setIsFading(false);
-    }, 500); // Durasi transisi fade
-  }, [playlist]);
+      setIsTransitioning(false);
+    }, 500); // Durasi harus sama dengan transisi CSS
+  }, [playlist, isTransitioning]);
 
+  // useEffect untuk slideshow gambar, sekarang menggunakan Ref untuk timer
   useEffect(() => {
+    // Hapus timer sebelumnya setiap kali efek ini berjalan
+    if (imageTimerRef.current) {
+      clearTimeout(imageTimerRef.current);
+    }
+
     if (playlist?.Media?.[currentIndex]?.type === "image") {
       const duration =
         (playlist.Media[currentIndex].PlaylistMedia?.duration || 10) * 1000;
-      const timer = setTimeout(goToNextItem, duration);
-      return () => clearTimeout(timer);
+      imageTimerRef.current = setTimeout(goToNextItem, duration);
     }
+
+    // Fungsi cleanup
+    return () => {
+      if (imageTimerRef.current) {
+        clearTimeout(imageTimerRef.current);
+      }
+    };
   }, [currentIndex, playlist, goToNextItem]);
 
   const handleUnmute = () => {
@@ -95,7 +136,8 @@ function PlayerPage() {
     }
   };
 
-  if (error) {
+  // Tampilan saat loading atau error
+  if (error)
     return (
       <div className="player-container">
         <p>
@@ -103,27 +145,21 @@ function PlayerPage() {
         </p>
       </div>
     );
-  }
-  if (!playlist) {
+  if (!playlist)
     return (
       <div className="player-container">
         <p>Memuat playlist untuk perangkat: {deviceId}...</p>
       </div>
     );
-  }
-  if (!playlist.Media || playlist.Media.length === 0) {
+  if (!playlist.Media || playlist.Media.length === 0)
     return (
       <div className="player-container">
         <p>Playlist ini kosong.</p>
       </div>
     );
-  }
 
   const currentItem = playlist.Media[currentIndex];
 
-  // ==========================================================
-  // PERUBAHAN UTAMA ADA DI BAGIAN RENDER INI
-  // ==========================================================
   return (
     <div className="player-container">
       {currentItem.type === "video" && isMuted && (
@@ -132,27 +168,28 @@ function PlayerPage() {
         </button>
       )}
 
-      {/* Kita hanya me-render SATU media yang aktif saat ini */}
       {currentItem.type === "image" && (
         <img
-          // KUNCI UTAMA: `key` akan memaksa React membuang elemen lama
-          // dan membuat yang baru setiap kali currentIndex berubah.
           key={currentItem.id}
           src={currentItem.url}
           alt={currentItem.filename}
-          className={`player-media ${isFading ? "fading" : ""}`}
+          className={`player-media ${isTransitioning ? "fading" : ""}`}
         />
       )}
       {currentItem.type === "video" && (
         <video
-          // KUNCI UTAMA: Sama seperti gambar, `key` memastikan elemen video lama dibersihkan.
           key={currentItem.id}
           ref={videoRef}
           src={currentItem.url}
           autoPlay
           muted={isMuted}
-          onEnded={goToNextItem} // Pemicu untuk pindah ke item berikutnya
-          className={`player-media ${isFading ? "fading" : ""}`}
+          onEnded={goToNextItem}
+          // Tambahkan penanganan error saat video gagal dimuat
+          onError={() => {
+            console.error("Gagal memuat video:", currentItem.url);
+            goToNextItem(); // Langsung pindah ke item berikutnya jika error
+          }}
+          className={`player-media ${isTransitioning ? "fading" : ""}`}
         />
       )}
     </div>
