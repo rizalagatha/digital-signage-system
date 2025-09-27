@@ -122,7 +122,6 @@ function DeviceManager() {
       <div className="device-manager-container">
         <div className="page-header">
           <h1>Manajemen Perangkat TV</h1>
-          {/* TOMBOL UNTUK MEMBUKA MODAL */}
           <button
             onClick={() => setIsModalOpen(true)}
             className="add-device-btn"
