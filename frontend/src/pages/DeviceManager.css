@@ -1,15 +1,40 @@
 /* --- Global Styling & Layout --- */
 .device-manager-container {
-  padding: 24px;
-  background-color: #f0f2f5;
+  padding: 24px 32px;
+  background-color: #f8f9fa; /* Warna latar lebih cerah */
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
 }
 
 h1 {
   font-size: 28px;
   color: #202124;
-  margin-bottom: 24px;
+  font-weight: 600;
+}
+
+.add-device-btn {
+  padding: 10px 20px;
+  border: none;
+  background-color: #1a73e8;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+.add-device-btn:hover {
+  background-color: #185abc;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .card {
@@ -18,82 +43,28 @@ h1 {
   padding: 24px;
   box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3),
     0 1px 3px 1px rgba(60, 64, 67, 0.15);
-  margin-bottom: 24px;
 }
 
-.card h2 {
-  font-size: 20px;
-  margin-top: 0;
-  margin-bottom: 20px;
-  color: #3c4043;
-}
-
-/* --- Form Styling --- */
-.register-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  align-items: flex-end;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 200px;
-}
-
-.form-group label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #5f6368;
-  margin-bottom: 6px;
-}
-
-.form-group input {
-  padding: 10px;
-  border: 1px solid #dadce0;
-  border-radius: 8px;
-  font-size: 15px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #1a73e8;
-  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
-}
-
-.submit-btn {
-  padding: 10px 24px;
-  border: none;
-  background-color: #1a73e8;
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  height: 42px; /* Menyamakan tinggi dengan input */
-}
-
-.submit-btn:hover {
-  background-color: #185abc;
-}
-
-/* --- Device List Card Styling --- */
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap; /* Agar responsif */
+  gap: 16px;
+}
+
+.card-header h2 {
+  font-size: 20px;
+  margin: 0;
+  color: #3c4043;
 }
 
 .search-input {
-  padding: 10px;
+  padding: 10px 16px;
   border: 1px solid #dadce0;
   border-radius: 8px;
-  width: 300px;
+  width: 320px;
   font-size: 15px;
 }
 
@@ -110,7 +81,7 @@ th,
 td {
   padding: 14px 16px;
   text-align: left;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e8eaed;
   vertical-align: middle;
 }
 
@@ -135,10 +106,11 @@ tbody tr:hover {
 
 code {
   background-color: #f1f3f4;
-  padding: 2px 6px;
+  padding: 3px 8px;
   border-radius: 4px;
   font-family: "Roboto Mono", monospace;
   font-size: 13px;
+  border: 1px solid #e8eaed;
 }
 
 .status-badge {
@@ -148,4 +120,98 @@ code {
   font-size: 12px;
   font-weight: 500;
   color: white;
+}
+
+.playlist-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background-color: #fff;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  color: #5f6368;
+  transition: color 0.2s;
+}
+.delete-btn:hover {
+  color: #d93025; /* red */
+}
+
+/* --- Modal Styling --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 32px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.3s ease;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #5f6368;
+}
+
+.modal-content h2 {
+  margin-bottom: 24px;
+}
+
+.register-form .form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.register-form label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #5f6368;
+  margin-bottom: 6px;
+}
+
+.register-form input {
+  padding: 12px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.modal-submit-btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 16px;
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
 }
