@@ -307,9 +307,8 @@ function DeviceManager() {
                       </td>
                       <td style={{ textAlign: "center" }}>
                         <button
-                          onClick={() => handleDeleteDevice(device)}
+                          onClick={() => handleDeleteDevice(device.id)}
                           className="delete-btn"
-                          title="Hapus Perangkat"
                         >
                           🗑️
                         </button>
