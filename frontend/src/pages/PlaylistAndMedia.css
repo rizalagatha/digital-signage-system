@@ -1,0 +1,329 @@
+/* --- Menggunakan variabel global dari CSS DeviceManager jika ada --- */
+/* Anda bisa membuat file CSS global seperti variables.css untuk ini */
+
+/* --- LAYOUT UTAMA --- */
+.playlist-media-page {
+  display: grid;
+  grid-template-columns: 450px 1fr; /* Kolom playlist lebih lebar */
+  gap: 24px;
+  padding: 24px;
+  font-family: "Inter", sans-serif;
+  background-color: #f0f2f5;
+  height: calc(100vh - 48px);
+  box-sizing: border-box;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow: hidden;
+}
+
+.card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3),
+    0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  display: flex;
+  flex-direction: column;
+}
+
+h2,
+h3 {
+  margin-top: 0;
+  color: #202124;
+  font-weight: 500;
+}
+
+/* --- KOLOM KIRI (PLAYLIST) --- */
+.playlist-editor {
+  flex-grow: 1; /* Membuat editor mengisi sisa ruang */
+}
+.playlist-items-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  border: 1px dashed #e0e0e0;
+  border-radius: 8px;
+  padding: 8px;
+  background-color: #fafafa;
+}
+.playlist-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 8px;
+  background-color: #fff;
+  border-radius: 6px;
+  user-select: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.drag-handle {
+  padding: 8px;
+  cursor: grab;
+  touch-action: none;
+  color: #9e9e9e;
+}
+.playlist-item-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-grow: 1;
+  cursor: pointer;
+  overflow: hidden;
+}
+.playlist-item-thumbnail {
+  width: 60px;
+  height: 40px;
+  background-color: #f0f0f0;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.media-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.video-icon-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+.playlist-item-filename {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #5f6368;
+}
+.remove-item-btn {
+  background: none;
+  border: none;
+  color: #bdbdbd;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 8px;
+  transition: color 0.2s;
+}
+.remove-item-btn:hover {
+  color: #d93025;
+}
+.save-playlist-btn {
+  width: 100%;
+  margin-top: 20px;
+  padding: 12px;
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+}
+.save-playlist-btn:hover {
+  background-color: #185abc;
+}
+
+/* --- KOLOM KANAN (MEDIA) --- */
+.upload-section .upload-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.upload-section button {
+  padding: 8px 16px;
+  border: none;
+  background: #34a853;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.upload-section button:disabled {
+  background-color: #bdbdbd;
+  cursor: not-allowed;
+}
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+.progress-bar-inner {
+  height: 100%;
+  background-color: #34a853;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.gallery-section {
+  flex-grow: 1;
+}
+.search-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+  overflow-y: auto;
+  height: 100%;
+}
+.gallery-item-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.gallery-item-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.gallery-item-thumbnail {
+  width: 100%;
+  height: 120px;
+  background-color: #212121;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.gallery-item-thumbnail .thumbnail-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.gallery-item-thumbnail:hover .thumbnail-overlay {
+  opacity: 1;
+}
+.preview-icon {
+  font-size: 24px;
+}
+.gallery-item-filename {
+  font-size: 13px;
+  padding: 8px 12px;
+  word-break: break-all;
+  flex-grow: 1;
+  color: #5f6368;
+}
+.gallery-item-actions {
+  display: flex;
+  border-top: 1px solid #f0f0f0;
+}
+.gallery-item-actions button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  cursor: pointer;
+  background-color: transparent;
+  transition: background-color 0.2s;
+  font-size: 13px;
+}
+.gallery-item-actions button:hover {
+  background-color: #f0f0f0;
+}
+.add-to-playlist-btn {
+  color: #1a73e8;
+  border-right: 1px solid #f0f0f0;
+}
+.delete-media-btn {
+  color: #d93025;
+}
+.empty-state {
+  text-align: center;
+  color: #757575;
+  padding: 40px 20px;
+  width: 100%;
+  grid-column: 1 / -1;
+}
+
+/* --- MODAL PREVIEW --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+.modal-content {
+  background-color: black;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 90vw;
+  max-height: 90vh;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+.modal-close {
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  width: 32px;
+  height: 32px;
+  background-color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.preview-media {
+  max-width: 100%;
+  max-height: calc(90vh - 40px);
+  display: block;
+  border-radius: 8px;
+}
+
+/* --- ANIMASI --- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

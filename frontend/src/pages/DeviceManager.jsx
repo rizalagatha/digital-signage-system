@@ -1,9 +1,15 @@
-import React, { useState, useEffect, useContext, createContext } from "react";
+import React, { useState, useEffect } from "react";
 import { useData } from "../context/DataContext";
+import { toast } from "react-toastify";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 import "./DeviceManager.css"; // Pastikan file CSS ini ada
+
+const MySwal = withReactContent(Swal);
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Komponen Modal untuk Form Pendaftaran
 const RegisterDeviceModal = ({ isOpen, onClose, onRegister }) => {
@@ -81,6 +87,8 @@ const RegisterDeviceModal = ({ isOpen, onClose, onRegister }) => {
 
 function DeviceManager() {
   const { devices, playlists, fetchData, isLoading } = useData();
+  const [newDeviceName, setNewDeviceName] = useState("");
+  const [newDeviceId, setNewDeviceId] = useState("");
   const [now, setNow] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false); // State untuk mengontrol modal
@@ -106,19 +114,103 @@ function DeviceManager() {
     return { ...status, timeAgo };
   };
 
-  const handleRegisterDevice = ({ name, deviceId }) => {
-    console.log("Mendaftarkan perangkat:", { name, deviceId });
-    // TODO: Ganti dengan logika fetch API Anda, termasuk notifikasi toast
+  const handleRegisterDevice = async (event) => {
+    event.preventDefault();
+
+    if (!newDeviceName || !newDeviceId) {
+      // Tidak perlu alert/toast, karena atribut 'required' pada input sudah menangani ini
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/devices`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newDeviceName, deviceId: newDeviceId }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Gagal mendaftarkan perangkat.");
+      }
+
+      MySwal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: `Perangkat "${newDeviceName}" telah berhasil didaftarkan.`,
+        timer: 2000, // Pop-up akan tertutup setelah 2 detik
+        showConfirmButton: false,
+      });
+      setNewDeviceName("");
+      setNewDeviceId("");
+      fetchData();
+    } catch (error) {
+      console.error("Gagal mendaftarkan perangkat", error);
+      MySwal.fire({
+        icon: "error",
+        title: "Gagal!",
+        text: error.message,
+      });
+    }
   };
 
-  const handleAssignPlaylist = (deviceId, playlistId) => {
-    console.log(`Menugaskan playlist ${playlistId} ke perangkat ${deviceId}`);
-    // TODO: Ganti dengan logika fetch API Anda
+  const handleAssignPlaylist = async (deviceId, playlistId) => {
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/devices/${deviceId}/assign`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ playlistId: playlistId || null }),
+        }
+      );
+
+      if (!res.ok) throw new Error("Gagal menugaskan playlist");
+
+      // Beri notifikasi singkat menggunakan toast
+      toast.info("Playlist berhasil diperbarui.");
+      await fetchData();
+    } catch (error) {
+      console.error("Gagal menugaskan playlist", error);
+      toast.error("Gagal menugaskan playlist.");
+    }
   };
 
-  const handleDeleteDevice = (device) => {
-    console.log(`Menghapus perangkat: ${device.name}`);
-    // TODO: Ganti dengan logika fetch API Anda, termasuk konfirmasi Swal
+  const handleDeleteDevice = (deviceId) => {
+    MySwal.fire({
+      title: "Anda Yakin?",
+      text: "Perangkat ini akan dihapus secara permanen!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/devices/${deviceId}`, {
+            method: "DELETE",
+          });
+
+          if (!res.ok) throw new Error("Gagal menghapus perangkat di server.");
+
+          MySwal.fire(
+            "Dihapus!",
+            "Perangkat telah berhasil dihapus.",
+            "success"
+          );
+          await fetchData(); // Refresh data setelah notifikasi sukses
+        } catch (error) {
+          console.error("Gagal menghapus perangkat:", error);
+          MySwal.fire(
+            "Gagal!",
+            "Terjadi kesalahan saat menghapus perangkat.",
+            "error"
+          );
+        }
+      }
+    });
   };
 
   const filteredDevices = devices.filter(
