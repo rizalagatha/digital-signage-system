@@ -8,6 +8,7 @@ import React, {
 import { useParams } from "react-router-dom";
 import { io } from "socket.io-client";
 import debounce from "lodash/debounce";
+import "./PlayerPage.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 

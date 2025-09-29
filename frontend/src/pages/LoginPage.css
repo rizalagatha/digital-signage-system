@@ -50,7 +50,15 @@
 }
 
 .input-wrapper {
-  position: relative;
+  position: relative; /* <-- KUNCI UTAMA ADA DI SINI */
+}
+
+.input-wrapper svg {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: var(--text-tertiary, #9aa0a6);
 }
 
 .input-icon {
