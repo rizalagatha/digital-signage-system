@@ -66,7 +66,7 @@ function DashboardLayout() {
       {/* --- SIDEBAR NAVIGASI --- */}
       <aside className="sidebar">
         <div className="sidebar-header">
-          <h1 className="logo">Signage Kencana</h1>
+          <h1 className="logo">Signage Kaosan</h1>
         </div>
         <nav className="sidebar-nav">
           <NavLink to="/" end className="nav-link">

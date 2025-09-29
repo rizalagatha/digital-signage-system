@@ -1,15 +1,14 @@
-/* --- Menggunakan variabel global dari CSS DeviceManager jika ada --- */
-/* Anda bisa membuat file CSS global seperti variables.css untuk ini */
+/* --- Menggunakan variabel dari App.css --- */
 
 /* --- LAYOUT UTAMA --- */
 .playlist-media-page {
   display: grid;
   grid-template-columns: 450px 1fr;
   gap: 24px;
-  padding: 24px 32px;
-  font-family: "Inter", sans-serif;
-  background-color: #f8f9fa;
-  min-height: calc(100vh - 48px);
+  padding: var(--page-padding, 24px 32px);
+  font-family: var(--font-main, "Inter", sans-serif);
+  background-color: var(--background-page, #f8f9fa);
+  min-height: 100vh;
   box-sizing: border-box;
 }
 
@@ -17,15 +16,17 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  /* Tidak perlu overflow: hidden lagi */
 }
 
 .card {
-  background-color: #ffffff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3),
-    0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  background-color: var(--background-card, #ffffff);
+  border-radius: var(--border-radius-lg, 12px);
+  padding: var(--card-padding, 24px);
+  box-shadow: var(
+    --shadow-md,
+    0 1px 2px 0 rgba(60, 64, 67, 0.3),
+    0 1px 3px 1px rgba(60, 64, 67, 0.15)
+  );
   display: flex;
   flex-direction: column;
 }
@@ -33,28 +34,144 @@
 h2,
 h3 {
   margin-top: 0;
-  color: #202124;
+  color: var(--text-primary, #202124);
+  font-weight: 600;
+}
+h3 {
   font-weight: 500;
+  font-size: 18px;
+  margin-bottom: 16px;
 }
 
-/* --- KOLOM KIRI (PLAYLIST) --- */
+.search-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color-medium, #ddd);
+  border-radius: var(--border-radius-md, 8px);
+  margin-bottom: 16px;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+/* --- STYLING BARU UNTUK FORM & TOMBOL --- */
+.create-playlist-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.create-playlist-form input {
+  flex-grow: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color-medium, #ddd);
+  border-radius: var(--border-radius-md, 8px);
+  font-family: inherit;
+  font-size: 14px;
+}
+.create-playlist-form button {
+  padding: 10px 20px;
+  border: none;
+  background-color: var(--primary-color, #1a73e8);
+  color: var(--text-on-primary, white);
+  font-weight: 500;
+  border-radius: var(--border-radius-md, 8px);
+  cursor: pointer;
+  transition: background-color var(--transition-fast, 0.2s);
+}
+.create-playlist-form button:hover {
+  background-color: var(--primary-color-hover, #185abc);
+}
+
+.upload-section .upload-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.upload-btn {
+  padding: 8px 16px;
+  border: none;
+  background: var(--success-color, #34a853);
+  color: var(--text-on-primary, white);
+  border-radius: var(--border-radius-md, 8px);
+  cursor: pointer;
+}
+.upload-btn:disabled {
+  background-color: var(--background-disabled, #bdbdbd);
+  cursor: not-allowed;
+}
+
+.file-input::file-selector-button {
+  padding: 8px 16px;
+  border: 1px solid var(--border-color-medium, #dadce0);
+  border-radius: var(--border-radius-md, 8px);
+  background-color: var(--background-hover, #f8f9fa);
+  cursor: pointer;
+  margin-right: 10px;
+  font-family: inherit;
+}
+/* --- AKHIR DARI STYLING BARU --- */
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border-color-light, #e0e0e0);
+  margin: 20px 0;
+}
+.playlist-list {
+  overflow-y: auto;
+}
+.playlist-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-radius: var(--border-radius-md, 8px);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast, 0.2s);
+}
+.playlist-list-item:hover {
+  background-color: var(--background-hover, #f1f3f4);
+}
+.playlist-list-item.active {
+  background-color: #e8f0fe;
+  color: var(--primary-color, #1967d2);
+  font-weight: 500;
+}
+.delete-playlist-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--text-tertiary, #9aa0a6);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity var(--transition-fast, 0.2s);
+}
+.playlist-list-item:hover .delete-playlist-btn {
+  visibility: visible;
+  opacity: 1;
+}
+.delete-playlist-btn:hover {
+  color: var(--danger-color, #d93025);
+}
+
 .playlist-editor {
-  flex-grow: 1; /* Membuat editor mengisi sisa ruang */
+  flex-grow: 1;
 }
 .playlist-items-container {
   flex-grow: 1;
   overflow-y: auto;
-  border: 1px dashed #e0e0e0;
-  border-radius: 8px;
+  border: 1px dashed var(--border-color-medium, #e0e0e0);
+  border-radius: var(--border-radius-md, 8px);
   padding: 8px;
   background-color: #fafafa;
+  min-height: 200px;
 }
 .playlist-item {
   display: flex;
   align-items: center;
   margin-bottom: 8px;
   padding: 8px;
-  background-color: #fff;
+  background-color: var(--background-card, #fff);
   border-radius: 6px;
   user-select: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -64,6 +181,7 @@ h3 {
   cursor: grab;
   touch-action: none;
   color: #9e9e9e;
+  font-size: 20px;
 }
 .playlist-item-info {
   display: flex;
@@ -78,7 +196,7 @@ h3 {
   height: 40px;
   background-color: #f0f0f0;
   flex-shrink: 0;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm, 4px);
   overflow: hidden;
   position: relative;
 }
@@ -107,7 +225,19 @@ h3 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #5f6368;
+  color: var(--text-secondary, #5f6368);
+}
+.playlist-item-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.duration-input {
+  width: 50px;
+  text-align: center;
+  border: 1px solid var(--border-color-medium, #ddd);
+  border-radius: var(--border-radius-sm, 4px);
+  padding: 4px;
 }
 .remove-item-btn {
   background: none;
@@ -116,70 +246,29 @@ h3 {
   font-size: 20px;
   cursor: pointer;
   padding: 0 8px;
-  transition: color 0.2s;
+  transition: color var(--transition-fast, 0.2s);
 }
 .remove-item-btn:hover {
-  color: #d93025;
+  color: var(--danger-color, #d93025);
 }
 .save-playlist-btn {
   width: 100%;
   margin-top: 20px;
   padding: 12px;
-  background-color: #1a73e8;
+  background-color: var(--primary-color, #1a73e8);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--border-radius-md, 8px);
   cursor: pointer;
   font-size: 16px;
   font-weight: 500;
 }
 .save-playlist-btn:hover {
-  background-color: #185abc;
-}
-
-/* --- KOLOM KANAN (MEDIA) --- */
-.upload-section .upload-controls {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-.upload-section button {
-  padding: 8px 16px;
-  border: none;
-  background: #34a853;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.upload-section button:disabled {
-  background-color: #bdbdbd;
-  cursor: not-allowed;
-}
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background-color: #e0e0e0;
-  border-radius: 4px;
-  margin-top: 12px;
-  overflow: hidden;
-}
-.progress-bar-inner {
-  height: 100%;
-  background-color: #34a853;
-  border-radius: 4px;
-  transition: width 0.3s ease;
+  background-color: var(--primary-color-hover, #185abc);
 }
 
 .gallery-section {
   flex-grow: 1;
-}
-.search-input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  box-sizing: border-box;
 }
 .gallery-grid {
   display: grid;
@@ -189,13 +278,14 @@ h3 {
   height: 100%;
 }
 .gallery-item-card {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border: 1px solid var(--border-color-light, #e0e0e0);
+  border-radius: var(--border-radius-md, 8px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-  transition: box-shadow 0.2s, transform 0.2s;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.08));
+  transition: box-shadow var(--transition-fast, 0.2s),
+    transform var(--transition-fast, 0.2s);
 }
 .gallery-item-card:hover {
   transform: translateY(-2px);
@@ -218,7 +308,7 @@ h3 {
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity var(--transition-fast, 0.2s);
 }
 .gallery-item-thumbnail:hover .thumbnail-overlay {
   opacity: 1;
@@ -231,7 +321,7 @@ h3 {
   padding: 8px 12px;
   word-break: break-all;
   flex-grow: 1;
-  color: #5f6368;
+  color: var(--text-secondary, #5f6368);
 }
 .gallery-item-actions {
   display: flex;
@@ -243,18 +333,20 @@ h3 {
   border: none;
   cursor: pointer;
   background-color: transparent;
-  transition: background-color 0.2s;
+  transition: background-color var(--transition-fast, 0.2s);
   font-size: 13px;
 }
 .gallery-item-actions button:hover {
-  background-color: #f0f0f0;
+  background-color: var(--background-hover, #f0f0f0);
 }
 .add-to-playlist-btn {
-  color: #1a73e8;
+  color: var(--primary-color, #1a73e8);
   border-right: 1px solid #f0f0f0;
+  font-weight: 500;
 }
 .delete-media-btn {
-  color: #d93025;
+  color: var(--danger-color, #d93025);
+  font-weight: 500;
 }
 .empty-state {
   text-align: center;
@@ -262,13 +354,14 @@ h3 {
   padding: 40px 20px;
   width: 100%;
   grid-column: 1 / -1;
+  font-style: italic;
 }
 
-/* --- MODAL PREVIEW --- */
 .modal-overlay {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -305,10 +398,9 @@ h3 {
   max-width: 100%;
   max-height: calc(90vh - 40px);
   display: block;
-  border-radius: 8px;
+  border-radius: var(--border-radius-md, 8px);
 }
 
-/* --- ANIMASI --- */
 @keyframes fadeIn {
   from {
     opacity: 0;
