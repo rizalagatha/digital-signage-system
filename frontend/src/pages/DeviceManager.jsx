@@ -87,8 +87,6 @@ const RegisterDeviceModal = ({ isOpen, onClose, onRegister }) => {
 
 function DeviceManager() {
   const { devices, playlists, fetchData, isLoading } = useData();
-  const [newDeviceName, setNewDeviceName] = useState("");
-  const [newDeviceId, setNewDeviceId] = useState("");
   const [now, setNow] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false); // State untuk mengontrol modal
@@ -114,43 +112,41 @@ function DeviceManager() {
     return { ...status, timeAgo };
   };
 
-  const handleRegisterDevice = async (event) => {
-    event.preventDefault();
-
-    if (!newDeviceName || !newDeviceId) {
-      // Tidak perlu alert/toast, karena atribut 'required' pada input sudah menangani ini
-      return;
-    }
+  const handleRegisterDevice = async ({ name, deviceId }) => {
+    // Menampilkan notifikasi "loading"
+    const toastId = toast.loading("Mendaftarkan perangkat...");
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/devices`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newDeviceName, deviceId: newDeviceId }),
+        body: JSON.stringify({ name, deviceId }),
       });
 
       if (!res.ok) {
+        // Jika server mengembalikan error, coba baca pesannya
         const errorData = await res.json();
         throw new Error(errorData.message || "Gagal mendaftarkan perangkat.");
       }
 
-      MySwal.fire({
-        icon: "success",
-        title: "Berhasil!",
-        text: `Perangkat "${newDeviceName}" telah berhasil didaftarkan.`,
-        timer: 2000, // Pop-up akan tertutup setelah 2 detik
-        showConfirmButton: false,
+      // Jika berhasil, update notifikasi menjadi sukses
+      toast.update(toastId, {
+        render: `Perangkat "${name}" berhasil didaftarkan!`,
+        type: "success",
+        isLoading: false,
+        autoClose: 4000,
       });
-      setNewDeviceName("");
-      setNewDeviceId("");
-      fetchData();
+
+      await fetchData(); // Refresh daftar perangkat untuk menampilkan yang baru
     } catch (error) {
-      console.error("Gagal mendaftarkan perangkat", error);
-      MySwal.fire({
-        icon: "error",
-        title: "Gagal!",
-        text: error.message,
+      // Jika gagal, update notifikasi menjadi error
+      toast.update(toastId, {
+        render: error.message,
+        type: "error",
+        isLoading: false,
+        autoClose: 5000,
       });
+      console.error("Gagal mendaftarkan perangkat", error);
     }
   };
 
