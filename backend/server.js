@@ -176,25 +176,14 @@ app.put("/api/playlists/:id", async (req, res) => {
 });
 
 app.delete("/api/media/:id", async (req, res) => {
-  console.log("--- PERMINTAAN DELETE DITERIMA ---");
   const idFromUrl = req.params.id;
-  console.log(
-    "ID yang diterima dari URL:",
-    idFromUrl,
-    "| Tipe data:",
-    typeof idFromUrl
-  );
   try {
     const media = await Media.findByPk(req.params.id);
 
-    console.log("Hasil pencarian di database (Media.findByPk):", media);
-
     if (!media) {
-      console.log("KESIMPULAN: Media tidak ditemukan di DB, mengirim 404.");
       return res.status(404).send("Media tidak ditemukan.");
     }
     // Hapus file fisik dari folder /public/uploads
-    console.log("KESIMPULAN: Media ditemukan, melanjutkan proses hapus.");
     const filePath = path.join(__dirname, "public", "uploads", media.filename);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
