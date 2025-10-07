@@ -44,10 +44,13 @@ const port = 3001;
 
 app.use(cors({}));
 app.use(express.json());
-app.use('/api', (req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
+app.use("/api", (req, res, next) => {
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate"
+  );
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   next();
 });
 app.use("/public", express.static(path.join(__dirname, "..", "public")));
@@ -291,17 +294,13 @@ app.get("/api/player/:deviceId", async (req, res) => {
         include: [
           {
             model: Media,
-            // TAMBAHAN KUNCI: Ambil atribut dari tabel perantara
             through: {
-              attributes: ["duration"], // Ambil kolom 'duration'
+              attributes: ["duration"],
             },
           },
         ],
       },
-      order: [
-        // Urutkan media di dalam playlist sesuai urutan pembuatannya
-        [Playlist, Media, PlaylistMedia, "createdAt", "ASC"],
-      ],
+      // Bagian 'order' kita hilangkan sementara untuk tes
     });
 
     if (!device || !device.Playlist) {
