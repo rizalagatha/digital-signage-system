@@ -17,7 +17,7 @@ function PlayerPage() {
   const [playlist, setPlaylist] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState("");
-  const [mediaError, setMediaError] = useState(null);
+  const [mediaError] = useState(null);
   const [isMuted, setIsMuted] = useState(true);
   // State baru untuk mencegah transisi saat data sedang dimuat
   const [isTransitioning, setIsTransitioning] = useState(false);
