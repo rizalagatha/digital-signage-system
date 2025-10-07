@@ -17,11 +17,10 @@ function PlayerPage() {
   const [playlist, setPlaylist] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState("");
-  const [mediaError] = useState(null);
+  const [mediaError, setMediaError] = useState(null);
   const [isMuted, setIsMuted] = useState(true);
   // State baru untuk mencegah transisi saat data sedang dimuat
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
   const videoRef = useRef(null);
   const mediaTimerRef = useRef(null);
 
@@ -96,17 +95,19 @@ function PlayerPage() {
 
   // Fungsi untuk pindah ke item berikutnya
   const goToNextItem = useCallback(() => {
-    if (!playlist?.Media?.length || isTransitioning) return;
-    setIsTransitioning(true);
+    // Gunakan isTransitioning
+    if (isTransitioning || !playlist?.Media?.length) return;
+
+    setIsTransitioning(true); // Kunci dimulai
+
     setTimeout(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % playlist.Media.length);
-      setIsTransitioning(false);
+        setCurrentIndex(prevIndex => (prevIndex + 1) % playlist.Media.length);
+        setIsTransitioning(false); // Kunci dilepas
     }, 500);
-  }, [playlist, isTransitioning]);
+}, [playlist, isTransitioning]);
 
   // useEffect untuk slideshow gambar, sekarang menggunakan Ref untuk timer
   useEffect(() => {
-    setRetryCount(0);
     // Hapus semua timer/event listener sebelumnya
     if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current);
     const videoElement = videoRef.current;
@@ -209,31 +210,23 @@ function PlayerPage() {
           autoPlay
           muted={isMuted}
           onError={(e) => {
-            console.error("PLAYER ERROR: Gagal memuat media", {
-              url: currentItem.url,
-              errorCode: e.target.error?.code,
-            });
+            const errorMessage = `Gagal memuat: ${currentItem.filename}`;
+            console.error("PLAYER ERROR:", errorMessage, e.target.error);
 
-            // Coba lagi maksimal 2 kali
-            if (retryCount < 2) {
-              console.log(
-                `Mencoba memuat ulang... Percobaan ke-${retryCount + 1}`
-              );
-              // Tunggu sebentar lalu coba lagi
-              setTimeout(() => {
-                setRetryCount((prev) => prev + 1);
-                // Memaksa video untuk load ulang sumbernya
-                if (videoRef.current) {
-                  videoRef.current.load();
-                }
-              }, 2000); // Jeda 2 detik sebelum mencoba lagi
-            } else {
-              console.error(
-                "Gagal total setelah beberapa kali percobaan. Melompat ke item berikutnya."
-              );
-              // Jika tetap gagal, baru lompat ke item berikutnya
-              goToNextItem();
-            }
+            // Tampilkan pesan error di layar
+            setMediaError(errorMessage);
+
+            // Sembunyikan pesan error setelah 5 detik
+            const hideErrorTimer = setTimeout(() => setMediaError(null), 5000);
+
+            // Lanjutkan ke item berikutnya setelah jeda singkat
+            const nextItemTimer = setTimeout(goToNextItem, 1000);
+
+            // Cleanup timers jika komponen unmount
+            return () => {
+              clearTimeout(hideErrorTimer);
+              clearTimeout(nextItemTimer);
+            };
           }}
           className={`player-media ${isTransitioning ? "fading" : ""}`}
         />
