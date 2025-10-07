@@ -155,17 +155,18 @@ hr {
 }
 
 .playlist-editor {
-  flex-grow: 1;
+  flex-grow: 1; /* Membuat card ini mengisi sisa ruang vertikal */
+
+  /* === PERUBAHAN UTAMA: Gunakan Flexbox === */
   display: flex;
   flex-direction: column;
-  position: relative; /* <-- TAMBAHKAN INI */
 }
 
 .playlist-items-container {
-  flex-grow: 1;
+  flex-grow: 1; /* Membuat container daftar ini "rakus" dan mengisi semua ruang kosong */
   overflow-y: auto;
-  border: 1px dashed var(--border-color-medium, #e0e0e0);
-  border-radius: var(--border-radius-md, 8px);
+  border: 1px dashed #e0e0e0;
+  border-radius: 8px;
   padding: 8px;
   background-color: #fafafa;
   min-height: 200px;
@@ -256,13 +257,16 @@ hr {
   color: var(--danger-color, #d93025);
 }
 .save-playlist-btn {
-  position: sticky; 
-  bottom: 24px; 
-  left: 24px; 
+  /* Hapus 'position: sticky' dan properti terkait */
+  /* position: sticky; */
+  /* bottom: 24px; */
+  /* left: 24px; */
+  /* width: calc(100% - 48px); */
 
-  width: calc(100% - 48px);
-
-  margin-top: 20px;
+  /* Styling Baru */
+  flex-shrink: 0; /* Mencegah tombol menyusut */
+  width: 100%;
+  margin-top: 20px; /* Jarak dari daftar di atasnya */
   padding: 12px;
   background-color: var(--primary-color, #1a73e8);
   color: white;
@@ -271,8 +275,6 @@ hr {
   cursor: pointer;
   font-size: 16px;
   font-weight: 500;
-  z-index: 10; 
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 .save-playlist-btn:hover {
   background-color: var(--primary-color-hover, #185abc);
