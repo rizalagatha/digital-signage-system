@@ -17,6 +17,7 @@ function PlayerPage() {
   const [playlist, setPlaylist] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState("");
+  const [mediaError, setMediaError] = useState(null);
   const [isMuted, setIsMuted] = useState(true);
   // State baru untuk mencegah transisi saat data sedang dimuat
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -184,6 +185,12 @@ function PlayerPage() {
         </button>
       )}
 
+      {mediaError && (
+        <div className="error-overlay">
+          <p>{mediaError}</p>
+        </div>
+      )}
+
       {currentItem.type === "image" && (
         <img
           key={currentItem.id}
@@ -200,12 +207,23 @@ function PlayerPage() {
           autoPlay
           muted={isMuted}
           onError={(e) => {
-            console.error(
-              "PLAYER ERROR: Gagal memuat video:",
-              currentItem.url,
-              e.target.error
-            );
-            setTimeout(goToNextItem, 1000);
+            const errorMessage = `Gagal memuat: ${currentItem.filename}`;
+            console.error("PLAYER ERROR:", errorMessage, e.target.error);
+
+            // Tampilkan pesan error di layar
+            setMediaError(errorMessage);
+
+            // Sembunyikan pesan error setelah 5 detik
+            const hideErrorTimer = setTimeout(() => setMediaError(null), 5000);
+
+            // Lanjutkan ke item berikutnya setelah jeda singkat
+            const nextItemTimer = setTimeout(goToNextItem, 1000);
+
+            // Cleanup timers jika komponen unmount
+            return () => {
+              clearTimeout(hideErrorTimer);
+              clearTimeout(nextItemTimer);
+            };
           }}
           className={`player-media ${isTransitioning ? "fading" : ""}`}
         />
