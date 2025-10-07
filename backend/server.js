@@ -285,6 +285,9 @@ app.get("/api/player/:deviceId", async (req, res) => {
         include: [
           {
             model: Media,
+            through: {
+              attributes: ["duration"],
+            },
           },
         ],
       },
