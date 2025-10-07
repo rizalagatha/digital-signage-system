@@ -21,6 +21,7 @@ function PlayerPage() {
   const [isMuted, setIsMuted] = useState(true);
   // State baru untuk mencegah transisi saat data sedang dimuat
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const videoRef = useRef(null);
   const mediaTimerRef = useRef(null);
 
@@ -105,6 +106,7 @@ function PlayerPage() {
 
   // useEffect untuk slideshow gambar, sekarang menggunakan Ref untuk timer
   useEffect(() => {
+    setRetryCount(0);
     // Hapus semua timer/event listener sebelumnya
     if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current);
     const videoElement = videoRef.current;
@@ -207,23 +209,31 @@ function PlayerPage() {
           autoPlay
           muted={isMuted}
           onError={(e) => {
-            const errorMessage = `Gagal memuat: ${currentItem.filename}`;
-            console.error("PLAYER ERROR:", errorMessage, e.target.error);
+            console.error("PLAYER ERROR: Gagal memuat media", {
+              url: currentItem.url,
+              errorCode: e.target.error?.code,
+            });
 
-            // Tampilkan pesan error di layar
-            setMediaError(errorMessage);
-
-            // Sembunyikan pesan error setelah 5 detik
-            const hideErrorTimer = setTimeout(() => setMediaError(null), 5000);
-
-            // Lanjutkan ke item berikutnya setelah jeda singkat
-            const nextItemTimer = setTimeout(goToNextItem, 1000);
-
-            // Cleanup timers jika komponen unmount
-            return () => {
-              clearTimeout(hideErrorTimer);
-              clearTimeout(nextItemTimer);
-            };
+            // Coba lagi maksimal 2 kali
+            if (retryCount < 2) {
+              console.log(
+                `Mencoba memuat ulang... Percobaan ke-${retryCount + 1}`
+              );
+              // Tunggu sebentar lalu coba lagi
+              setTimeout(() => {
+                setRetryCount((prev) => prev + 1);
+                // Memaksa video untuk load ulang sumbernya
+                if (videoRef.current) {
+                  videoRef.current.load();
+                }
+              }, 2000); // Jeda 2 detik sebelum mencoba lagi
+            } else {
+              console.error(
+                "Gagal total setelah beberapa kali percobaan. Melompat ke item berikutnya."
+              );
+              // Jika tetap gagal, baru lompat ke item berikutnya
+              goToNextItem();
+            }
           }}
           className={`player-media ${isTransitioning ? "fading" : ""}`}
         />
