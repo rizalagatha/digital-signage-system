@@ -199,7 +199,6 @@ function PlayerPage() {
           src={currentItem.url}
           autoPlay
           muted={isMuted}
-          // onEnded DIKELOLA OLEH useEffect SEKARANG
           onError={(e) => {
             console.error(
               "PLAYER ERROR: Gagal memuat video:",

@@ -44,6 +44,12 @@ const port = 3001;
 
 app.use(cors({}));
 app.use(express.json());
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
 app.use("/public", express.static(path.join(__dirname, "..", "public")));
 
 io.on("connection", (socket) => {
@@ -285,10 +291,17 @@ app.get("/api/player/:deviceId", async (req, res) => {
         include: [
           {
             model: Media,
+            // TAMBAHAN KUNCI: Ambil atribut dari tabel perantara
+            through: {
+              attributes: ["duration"], // Ambil kolom 'duration'
+            },
           },
         ],
       },
-      order: [[Playlist, Media, PlaylistMedia, "createdAt", "ASC"]],
+      order: [
+        // Urutkan media di dalam playlist sesuai urutan pembuatannya
+        [Playlist, Media, PlaylistMedia, "createdAt", "ASC"],
+      ],
     });
 
     if (!device || !device.Playlist) {
@@ -296,9 +309,22 @@ app.get("/api/player/:deviceId", async (req, res) => {
         .status(404)
         .json({ message: "Tidak ada playlist yang ditugaskan." });
     }
-    // Mengembalikan data playlist lengkap
-    res.json(device.Playlist);
+
+    // Proses data untuk menambahkan URL lengkap sebelum mengirim
+    const playlistJson = device.Playlist.toJSON();
+    if (playlistJson.Media && Array.isArray(playlistJson.Media)) {
+      playlistJson.Media = playlistJson.Media.map((media) => {
+        return {
+          ...media,
+          url: `${serverBaseUrl}${media.filePath}`,
+        };
+      });
+    }
+
+    // Mengembalikan data playlist lengkap yang sudah diproses
+    res.json(playlistJson);
   } catch (error) {
+    console.error("Gagal mengambil data player:", error);
     res.status(500).json({ message: "Gagal mengambil data untuk player." });
   }
 });

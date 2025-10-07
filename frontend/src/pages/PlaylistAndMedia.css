@@ -156,7 +156,11 @@ hr {
 
 .playlist-editor {
   flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative; /* <-- TAMBAHKAN INI */
 }
+
 .playlist-items-container {
   flex-grow: 1;
   overflow-y: auto;
@@ -252,7 +256,12 @@ hr {
   color: var(--danger-color, #d93025);
 }
 .save-playlist-btn {
-  width: 100%;
+  position: sticky; 
+  bottom: 24px; 
+  left: 24px; 
+
+  width: calc(100% - 48px);
+
   margin-top: 20px;
   padding: 12px;
   background-color: var(--primary-color, #1a73e8);
@@ -262,6 +271,8 @@ hr {
   cursor: pointer;
   font-size: 16px;
   font-weight: 500;
+  z-index: 10; 
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 .save-playlist-btn:hover {
   background-color: var(--primary-color-hover, #185abc);
