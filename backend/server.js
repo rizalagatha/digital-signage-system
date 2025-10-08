@@ -47,24 +47,40 @@ app.use(express.json());
 app.use("/public", express.static(path.join(__dirname, "..", "public")));
 
 io.on("connection", (socket) => {
-  console.log("Sebuah player terhubung:", socket.id);
+  // Kita tidak langsung menampilkan log di sini, tapi menunggu player "memperkenalkan diri"
 
-  // Player akan mengirim event ini saat pertama kali terhubung
-  socket.on('player:error', (errorData) => {
-        // Dapatkan ID player dari socket yang mengirim laporan
-        const deviceId = Array.from(socket.rooms).pop(); 
-        
-        // Tampilkan laporan error di log backend (PM2)
-        console.error(`[ERROR REPORT from ${deviceId}]:`, errorData);
-        
-        // Di sini Anda bisa menambahkan logika lain, misalnya:
-        // - Menyimpan log error ke database
-        // - Mengirim notifikasi email/Telegram ke admin
-    });
+  // 1. Saat player mengirim ID-nya
+  socket.on("player:join", (deviceId) => {
+    // Simpan deviceId ke dalam objek socket agar bisa kita gunakan nanti
+    socket.deviceId = deviceId;
 
-    socket.on('disconnect', () => {
-        console.log('Sebuah player terputus:', socket.id);
-    });
+    // Tampilkan log yang lebih informatif
+    console.log(
+      `[CONNECT] Player '${deviceId}' terhubung (Socket ID: ${socket.id})`
+    );
+
+    socket.join(deviceId);
+  });
+
+  // Listener untuk laporan error dari player
+  socket.on("player:error", (errorData) => {
+    // Gunakan ID yang sudah kita simpan untuk membuat log lebih jelas
+    const deviceId = socket.deviceId || "UNKNOWN";
+    console.error(`[ERROR REPORT from ${deviceId}]:`, errorData);
+  });
+
+  // 2. Saat player terputus
+  socket.on("disconnect", () => {
+    // Gunakan ID yang sudah kita simpan untuk mengetahui siapa yang terputus
+    if (socket.deviceId) {
+      console.log(`[DISCONNECT] Player '${socket.deviceId}' terputus.`);
+    } else {
+      // Fallback jika player terputus sebelum sempat mengirim ID
+      console.log(
+        `[DISCONNECT] Player tanpa ID terputus (Socket ID: ${socket.id})`
+      );
+    }
+  });
 });
 
 // server.js
