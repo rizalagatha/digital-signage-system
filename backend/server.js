@@ -11,6 +11,7 @@ const path = require("path");
 const bcrypt = require("bcrypt");
 const sequelize = require("./config/database");
 const { Op } = require("sequelize");
+const axios = require("axios");
 
 // Impor Model
 const User = require("./models/User");
@@ -64,9 +65,14 @@ io.on("connection", (socket) => {
 
   // Listener untuk laporan error dari player
   socket.on("player:error", (errorData) => {
-    // Gunakan ID yang sudah kita simpan untuk membuat log lebih jelas
     const deviceId = socket.deviceId || "UNKNOWN";
-    console.error(`[ERROR REPORT from ${deviceId}]:`, errorData);
+    const logMessage = `[ERROR REPORT from ${deviceId}]: Gagal memuat ${errorData.url}`;
+
+    // Tetap tampilkan di log PM2
+    console.error(logMessage, errorData.errorMessage);
+
+    // Kirim notifikasi ke Telegram
+    sendTelegramNotification(logMessage);
   });
 
   // 2. Saat player terputus
@@ -82,6 +88,23 @@ io.on("connection", (socket) => {
     }
   });
 });
+
+function sendTelegramNotification(message) {
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+
+    if (!token || !chatId) {
+        return console.log("Variabel Telegram belum diatur di .env");
+    }
+
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    axios.post(url, {
+        chat_id: chatId,
+        text: message
+    }).catch(err => {
+        console.error("Gagal mengirim notifikasi Telegram:", err.message);
+    });
+}
 
 // server.js
 const storage = multer.diskStorage({
