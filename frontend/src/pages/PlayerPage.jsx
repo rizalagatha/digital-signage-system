@@ -17,12 +17,13 @@ function PlayerPage() {
   const [playlist, setPlaylist] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState("");
-  const [mediaError, setMediaError] = useState(null);
+  const [mediaError] = useState(null);
   const [isMuted, setIsMuted] = useState(true);
   // State baru untuk mencegah transisi saat data sedang dimuat
   const [isTransitioning, setIsTransitioning] = useState(false);
   const videoRef = useRef(null);
   const mediaTimerRef = useRef(null);
+  const socketRef = useRef(null);
 
   const fetchPlaylist = useCallback(
     async (isUpdate = false) => {
@@ -86,6 +87,8 @@ function PlayerPage() {
     sendHeartbeat();
     const heartbeatInterval = setInterval(sendHeartbeat, 60000);
 
+    socketRef.current = socket;
+
     return () => {
       debouncedFetchPlaylist.cancel();
       clearInterval(heartbeatInterval);
@@ -101,10 +104,10 @@ function PlayerPage() {
     setIsTransitioning(true); // Kunci dimulai
 
     setTimeout(() => {
-        setCurrentIndex(prevIndex => (prevIndex + 1) % playlist.Media.length);
-        setIsTransitioning(false); // Kunci dilepas
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % playlist.Media.length);
+      setIsTransitioning(false); // Kunci dilepas
     }, 500);
-}, [playlist, isTransitioning]);
+  }, [playlist, isTransitioning]);
 
   // useEffect untuk slideshow gambar, sekarang menggunakan Ref untuk timer
   useEffect(() => {
@@ -210,23 +213,20 @@ function PlayerPage() {
           autoPlay
           muted={isMuted}
           onError={(e) => {
-            const errorMessage = `Gagal memuat: ${currentItem.filename}`;
-            console.error("PLAYER ERROR:", errorMessage, e.target.error);
-
-            // Tampilkan pesan error di layar
-            setMediaError(errorMessage);
-
-            // Sembunyikan pesan error setelah 5 detik
-            const hideErrorTimer = setTimeout(() => setMediaError(null), 5000);
-
-            // Lanjutkan ke item berikutnya setelah jeda singkat
-            const nextItemTimer = setTimeout(goToNextItem, 1000);
-
-            // Cleanup timers jika komponen unmount
-            return () => {
-              clearTimeout(hideErrorTimer);
-              clearTimeout(nextItemTimer);
+            const errorData = {
+              message: "Gagal memuat media",
+              url: currentItem.url,
+              errorCode: e.target.error?.code,
+              errorMessage: e.target.error?.message,
             };
+            console.error("PLAYER ERROR:", errorData);
+
+            // KIRIM LAPORAN ERROR KE BACKEND VIA WEBSOCKET
+            if (socketRef.current) {
+              socketRef.current.emit("player:error", errorData);
+            }
+
+            setTimeout(goToNextItem, 1000);
           }}
           className={`player-media ${isTransitioning ? "fading" : ""}`}
         />

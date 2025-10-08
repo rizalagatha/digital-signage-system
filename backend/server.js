@@ -50,14 +50,21 @@ io.on("connection", (socket) => {
   console.log("Sebuah player terhubung:", socket.id);
 
   // Player akan mengirim event ini saat pertama kali terhubung
-  socket.on("player:join", (deviceId) => {
-    console.log(`Player ${socket.id} bergabung ke room: ${deviceId}`);
-    socket.join(deviceId); // Masukkan player ke "room" berdasarkan ID uniknya
-  });
+  socket.on('player:error', (errorData) => {
+        // Dapatkan ID player dari socket yang mengirim laporan
+        const deviceId = Array.from(socket.rooms).pop(); 
+        
+        // Tampilkan laporan error di log backend (PM2)
+        console.error(`[ERROR REPORT from ${deviceId}]:`, errorData);
+        
+        // Di sini Anda bisa menambahkan logika lain, misalnya:
+        // - Menyimpan log error ke database
+        // - Mengirim notifikasi email/Telegram ke admin
+    });
 
-  socket.on("disconnect", () => {
-    console.log("Sebuah player terputus:", socket.id);
-  });
+    socket.on('disconnect', () => {
+        console.log('Sebuah player terputus:', socket.id);
+    });
 });
 
 // server.js
