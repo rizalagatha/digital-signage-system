@@ -176,12 +176,13 @@ function PlayerPage() {
 
   const currentItem = playlist.Media[currentIndex];
 
-  if (!currentItem)
+  if (!currentItem) {
     return (
       <div className="player-container">
-        <p>Memuat media...</p>
+        <p>Playlist valid, menunggu item media...</p>
       </div>
     );
+  }
 
   return (
     <div className="player-container">
@@ -189,12 +190,6 @@ function PlayerPage() {
         <button onClick={handleUnmute} className="unmute-button">
           {isMuted ? "🔇" : "🔊"}
         </button>
-      )}
-
-      {mediaError && (
-        <div className="error-overlay">
-          <p>{mediaError}</p>
-        </div>
       )}
 
       {currentItem.type === "image" && (
@@ -212,20 +207,12 @@ function PlayerPage() {
           src={currentItem.url}
           autoPlay
           muted={isMuted}
+          onEnded={goToNextItem}
           onError={(e) => {
-            const errorData = {
-              message: "Gagal memuat media",
+            console.error("PLAYER ERROR: Gagal memuat media", {
               url: currentItem.url,
               errorCode: e.target.error?.code,
-              errorMessage: e.target.error?.message,
-            };
-            console.error("PLAYER ERROR:", errorData);
-
-            // KIRIM LAPORAN ERROR KE BACKEND VIA WEBSOCKET
-            if (socketRef.current) {
-              socketRef.current.emit("player:error", errorData);
-            }
-
+            });
             setTimeout(goToNextItem, 1000);
           }}
           className={`player-media ${isTransitioning ? "fading" : ""}`}
