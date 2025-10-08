@@ -17,12 +17,11 @@ function PlayerPage() {
   const [playlist, setPlaylist] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState("");
-  const [mediaError] = useState(null);
   const [isMuted, setIsMuted] = useState(true);
   // State baru untuk mencegah transisi saat data sedang dimuat
   const [isTransitioning, setIsTransitioning] = useState(false);
   const videoRef = useRef(null);
-  const mediaTimerRef = useRef(null);
+  const imageTimerRef = useRef(null);
   const socketRef = useRef(null);
 
   const fetchPlaylist = useCallback(
@@ -109,42 +108,47 @@ function PlayerPage() {
     }, 500);
   }, [playlist, isTransitioning]);
 
-  // useEffect untuk slideshow gambar, sekarang menggunakan Ref untuk timer
+  // useEffect HANYA untuk slideshow GAMBAR
   useEffect(() => {
-    // Hapus semua timer/event listener sebelumnya
-    if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current);
-    const videoElement = videoRef.current;
-    if (videoElement) {
-      videoElement.onended = null; // Hapus event listener lama
+    // Selalu bersihkan timer sebelumnya
+    if (imageTimerRef.current) {
+      clearTimeout(imageTimerRef.current);
     }
 
     const currentItem = playlist?.Media?.[currentIndex];
-    if (!currentItem) return;
-
-    // Logika untuk GAMBAR
-    if (currentItem.type === "image") {
+    if (currentItem?.type === "image") {
       const duration = (currentItem.PlaylistMedia?.duration || 10) * 1000;
-      mediaTimerRef.current = setTimeout(goToNextItem, duration);
+      imageTimerRef.current = setTimeout(goToNextItem, duration);
     }
-    // Logika untuk VIDEO
-    else if (currentItem.type === "video") {
-      if (videoElement) {
-        videoElement.onended = goToNextItem; // Pasang event listener baru
-        videoElement.play().catch((error) => {
-          console.error(
-            "Autoplay pada video gagal, melompat ke item berikutnya:",
-            error
-          );
+
+    // Fungsi cleanup
+    return () => {
+      if (imageTimerRef.current) {
+        clearTimeout(imageTimerRef.current);
+      }
+    };
+  }, [currentIndex, playlist, goToNextItem]);
+
+  // useEffect HANYA untuk mengontrol VIDEO
+  useEffect(() => {
+    const currentItem = playlist?.Media?.[currentIndex];
+    const videoElement = videoRef.current;
+
+    // Efek ini hanya peduli pada video dan memastikan elemennya sudah ada
+    if (currentItem?.type === "video" && videoElement) {
+      // Pasang event listener untuk video yang sedang aktif
+      videoElement.onended = goToNextItem;
+
+      // Coba putar video secara eksplisit
+      const playPromise = videoElement.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.error("Autoplay video gagal, lanjut ke berikutnya:", error);
           // Jika autoplay gagal (misalnya karena interaksi browser), lewati video ini
-          setTimeout(goToNextItem, 500);
+          goToNextItem();
         });
       }
     }
-
-    // Fungsi cleanup untuk membersihkan timer saat komponen berganti
-    return () => {
-      if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current);
-    };
   }, [currentIndex, playlist, goToNextItem]);
 
   const handleUnmute = () => {
@@ -188,7 +192,7 @@ function PlayerPage() {
     <div className="player-container">
       {currentItem.type === "video" && isMuted && (
         <button onClick={handleUnmute} className="unmute-button">
-          {isMuted ? "🔇" : "🔊"}
+          🔇
         </button>
       )}
 
@@ -207,12 +211,13 @@ function PlayerPage() {
           src={currentItem.url}
           autoPlay
           muted={isMuted}
-          onEnded={goToNextItem}
+          // onEnded sekarang dikelola oleh useEffect
           onError={(e) => {
-            console.error("PLAYER ERROR: Gagal memuat media", {
-              url: currentItem.url,
-              errorCode: e.target.error?.code,
-            });
+            console.error(
+              "PLAYER ERROR: Gagal memuat video:",
+              currentItem.url,
+              e.target.error
+            );
             setTimeout(goToNextItem, 1000);
           }}
           className={`player-media ${isTransitioning ? "fading" : ""}`}
