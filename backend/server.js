@@ -119,6 +119,9 @@ const upload = multer({ storage: storage });
 
 // === API ENDPOINTS ===
 
+// ping
+app.get('/api/ping', (req, res) => res.status(200).send('pong'));
+
 // Auth
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;

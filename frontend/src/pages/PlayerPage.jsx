@@ -110,24 +110,34 @@ function PlayerPage() {
 
   // useEffect HANYA untuk slideshow GAMBAR
   useEffect(() => {
-    // Selalu bersihkan timer sebelumnya
-    if (imageTimerRef.current) {
-      clearTimeout(imageTimerRef.current);
-    }
+    // Selalu bersihkan timer dari efek sebelumnya
+    if (imageTimerRef.current) clearTimeout(imageTimerRef.current);
+
+    // Buat variabel untuk interval 'keep-alive'
+    let keepAliveInterval = null;
 
     const currentItem = playlist?.Media?.[currentIndex];
+
+    // Jalankan logika ini HANYA jika item saat ini adalah gambar
     if (currentItem?.type === "image") {
+      // Timer utama untuk durasi gambar
       const duration = (currentItem.PlaylistMedia?.duration || 10) * 1000;
       imageTimerRef.current = setTimeout(goToNextItem, duration);
+
+      // "PING" KECIL UNTUK MENJAGA KONEKSI SETIAP 30 DETIK
+      keepAliveInterval = setInterval(() => {
+        // Kirim request kecil ke server, hasilnya kita abaikan
+        fetch(`${API_BASE_URL}/api/ping`).catch(() => {});
+        console.log("Ping to keep network alive..."); // Log untuk debugging
+      }, 30000);
     }
 
-    // Fungsi cleanup
+    // Fungsi cleanup akan membersihkan kedua timer
     return () => {
-      if (imageTimerRef.current) {
-        clearTimeout(imageTimerRef.current);
-      }
+      if (imageTimerRef.current) clearTimeout(imageTimerRef.current);
+      if (keepAliveInterval) clearInterval(keepAliveInterval);
     };
-  }, [currentIndex, playlist, goToNextItem]);
+  }, [currentIndex, playlist, goToNextItem, API_BASE_URL]);
 
   // useEffect HANYA untuk mengontrol VIDEO
   useEffect(() => {
