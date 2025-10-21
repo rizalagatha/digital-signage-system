@@ -108,93 +108,98 @@ function PlayerPage() {
     }, 500);
   }, [playlist, isTransitioning]);
 
-  // useEffect HANYA untuk slideshow GAMBAR
   useEffect(() => {
-    // Selalu bersihkan timer dari efek sebelumnya
-    if (imageTimerRef.current) clearTimeout(imageTimerRef.current);
+    // 1. Logika Cleanup Universal (Dijalankan Setiap Kali Item Berubah)
+    // Hapus timer gambar sebelumnya
+    if (imageTimerRef.current) {
+      clearTimeout(imageTimerRef.current);
+      imageTimerRef.current = null; // Reset ref
+    }
+    // Hapus interval keep-alive sebelumnya
+    // let keepAliveInterval = null; // Deklarasi di sini agar cleanup bisa akses
+    if (window.playerKeepAliveInterval) {
+      // Gunakan window object untuk menyimpan ID interval
+      clearInterval(window.playerKeepAliveInterval);
+      window.playerKeepAliveInterval = null;
+    }
+    // Cleanup video sebelumnya (jika ada)
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      videoElement.onended = null; // Hapus listener lama
+      videoElement.onerror = null; // Hapus listener error lama
+      // Hentikan & kosongkan sumber video lama jika perlu (opsional tapi aman)
+      if (!videoElement.paused) {
+        videoElement.pause();
+      }
+      // videoElement.src = ""; // Bisa menyebabkan flicker, hati-hati
+      // videoElement.load();
+    }
 
-    // Buat variabel untuk interval 'keep-alive'
-    let keepAliveInterval = null;
-
+    // 2. Logika Setup Berdasarkan Tipe Item Saat Ini
     const currentItem = playlist?.Media?.[currentIndex];
+    if (!currentItem) return; // Keluar jika item tidak valid
 
-    // Jalankan logika ini HANYA jika item saat ini adalah gambar
-    if (currentItem?.type === "image") {
-      // Timer utama untuk durasi gambar
+    // Setup untuk GAMBAR
+    if (currentItem.type === "image") {
       const duration = (currentItem.PlaylistMedia?.duration || 10) * 1000;
       imageTimerRef.current = setTimeout(goToNextItem, duration);
 
-      // "PING" KECIL UNTUK MENJAGA KONEKSI SETIAP 30 DETIK
-      keepAliveInterval = setInterval(() => {
-        // Kirim request kecil ke server, hasilnya kita abaikan
+      // "Ping" keep-alive HANYA saat gambar ditampilkan
+      window.playerKeepAliveInterval = setInterval(() => {
         fetch(`${API_BASE_URL}/api/ping`).catch(() => {});
-        console.log("Ping to keep network alive..."); // Log untuk debugging
+        console.log("Ping to keep network alive...");
       }, 30000);
     }
+    // Setup untuk VIDEO
+    else if (currentItem.type === "video") {
+      // Kita butuh sedikit jeda agar elemen video baru benar-benar siap di DOM
+      // setelah React mengganti dari <img> ke <video>
+      const setupVideoTimeout = setTimeout(() => {
+        const currentVideoElement = videoRef.current; // Ambil ref lagi
+        if (currentVideoElement) {
+          // Pasang listener onended
+          currentVideoElement.onended = goToNextItem;
 
-    // Fungsi cleanup akan membersihkan kedua timer
-    return () => {
-      if (imageTimerRef.current) clearTimeout(imageTimerRef.current);
-      if (keepAliveInterval) clearInterval(keepAliveInterval);
-    };
-  }, [currentIndex, playlist, goToNextItem, API_BASE_URL]);
+          // Pasang listener onerror
+          currentVideoElement.onerror = (e) => {
+            console.error(
+              "PLAYER ERROR: Gagal memuat video:",
+              currentItem.url,
+              e.target.error
+            );
+            // Di sini Anda bisa menambahkan logika retry jika mau
+            setTimeout(goToNextItem, 1000); // Langsung lanjut jika error
+          };
 
-  // useEffect HANYA untuk mengontrol VIDEO
-  useEffect(() => {
-    const currentItem = playlist?.Media?.[currentIndex];
-    const videoElement = videoRef.current; // Ambil referensi saat ini
-
-    // Variabel untuk melacak apakah cleanup sudah dijalankan
-    let isCleanedUp = false;
-
-    // Fungsi ini akan dieksekusi HANYA jika item saat ini adalah VIDEO
-    const setupVideo = () => {
-      if (isCleanedUp) return; // Jangan lakukan apa-apa jika sudah di-cleanup
-
-      if (videoElement) {
-        // Pasang event listener 'onended'
-        const handleEnd = () => {
-          if (!isCleanedUp) {
-            // Pastikan hanya dijalankan sekali
-            goToNextItem();
+          // Coba putar video
+          const playPromise = currentVideoElement.play();
+          if (playPromise !== undefined) {
+            playPromise.catch((error) => {
+              if (error.name !== "AbortError") {
+                // Abaikan AbortError
+                console.error("Autoplay video gagal:", error);
+                setTimeout(goToNextItem, 500);
+              }
+            });
           }
-        };
-        videoElement.addEventListener("ended", handleEnd);
-
-        // Coba putar video
-        const playPromise = videoElement.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((error) => {
-            // Hanya log error jika BUKAN karena interupsi yang disengaja
-            if (error.name !== "AbortError" && !isCleanedUp) {
-              console.error("Autoplay video gagal:", error);
-              // Jika autoplay gagal karena alasan lain, coba lanjut
-              setTimeout(goToNextItem, 500);
-            }
-          });
         }
+      }, 100); // Jeda 100ms, sesuaikan jika perlu
 
-        // Kembalikan fungsi cleanup spesifik untuk video ini
-        return () => {
-          isCleanedUp = true; // Tandai bahwa cleanup sudah berjalan
-          videoElement.removeEventListener("ended", handleEnd);
-          // Penting: Hentikan video saat berpindah item
-          videoElement.pause();
-          videoElement.src = ""; // Kosongkan sumber untuk membebaskan memori
-          videoElement.load();
-        };
-      }
-    };
-
-    // Jalankan setup HANYA jika item adalah video
-    if (currentItem?.type === "video") {
-      return setupVideo(); // Jalankan setup dan kembalikan cleanup-nya
+      // Simpan ID timeout agar bisa dibersihkan
+      imageTimerRef.current = setupVideoTimeout; // Gunakan ref yang sama untuk menyimpan ID timeout
     }
 
-    // Jika bukan video, pastikan tidak ada sisa cleanup video sebelumnya
-    // (Meskipun seharusnya sudah ditangani oleh return di atas)
+    // 3. Fungsi Cleanup Utama (Dijalankan Saat Keluar Halaman atau Item Berubah)
     return () => {
-      isCleanedUp = true;
+      if (imageTimerRef.current) clearTimeout(imageTimerRef.current);
+      if (window.playerKeepAliveInterval)
+        clearInterval(window.playerKeepAliveInterval);
+      // Cleanup video (listener dihapus saat elemen video di-unmount oleh React Key)
+      // Kita hanya perlu memastikan video berhenti jika sedang berjalan
+      const videoElem = videoRef.current;
+      if (videoElem && !videoElem.paused) {
+        videoElem.pause();
+      }
     };
   }, [currentIndex, playlist, goToNextItem]);
 
