@@ -142,23 +142,60 @@ function PlayerPage() {
   // useEffect HANYA untuk mengontrol VIDEO
   useEffect(() => {
     const currentItem = playlist?.Media?.[currentIndex];
-    const videoElement = videoRef.current;
+    const videoElement = videoRef.current; // Ambil referensi saat ini
 
-    // Efek ini hanya peduli pada video dan memastikan elemennya sudah ada
-    if (currentItem?.type === "video" && videoElement) {
-      // Pasang event listener untuk video yang sedang aktif
-      videoElement.onended = goToNextItem;
+    // Variabel untuk melacak apakah cleanup sudah dijalankan
+    let isCleanedUp = false;
 
-      // Coba putar video secara eksplisit
-      const playPromise = videoElement.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((error) => {
-          console.error("Autoplay video gagal, lanjut ke berikutnya:", error);
-          // Jika autoplay gagal (misalnya karena interaksi browser), lewati video ini
-          goToNextItem();
-        });
+    // Fungsi ini akan dieksekusi HANYA jika item saat ini adalah VIDEO
+    const setupVideo = () => {
+      if (isCleanedUp) return; // Jangan lakukan apa-apa jika sudah di-cleanup
+
+      if (videoElement) {
+        // Pasang event listener 'onended'
+        const handleEnd = () => {
+          if (!isCleanedUp) {
+            // Pastikan hanya dijalankan sekali
+            goToNextItem();
+          }
+        };
+        videoElement.addEventListener("ended", handleEnd);
+
+        // Coba putar video
+        const playPromise = videoElement.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((error) => {
+            // Hanya log error jika BUKAN karena interupsi yang disengaja
+            if (error.name !== "AbortError" && !isCleanedUp) {
+              console.error("Autoplay video gagal:", error);
+              // Jika autoplay gagal karena alasan lain, coba lanjut
+              setTimeout(goToNextItem, 500);
+            }
+          });
+        }
+
+        // Kembalikan fungsi cleanup spesifik untuk video ini
+        return () => {
+          isCleanedUp = true; // Tandai bahwa cleanup sudah berjalan
+          videoElement.removeEventListener("ended", handleEnd);
+          // Penting: Hentikan video saat berpindah item
+          videoElement.pause();
+          videoElement.src = ""; // Kosongkan sumber untuk membebaskan memori
+          videoElement.load();
+        };
       }
+    };
+
+    // Jalankan setup HANYA jika item adalah video
+    if (currentItem?.type === "video") {
+      return setupVideo(); // Jalankan setup dan kembalikan cleanup-nya
     }
+
+    // Jika bukan video, pastikan tidak ada sisa cleanup video sebelumnya
+    // (Meskipun seharusnya sudah ditangani oleh return di atas)
+    return () => {
+      isCleanedUp = true;
+    };
   }, [currentIndex, playlist, goToNextItem]);
 
   const handleUnmute = () => {
