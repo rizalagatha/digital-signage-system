@@ -90,37 +90,56 @@ io.on("connection", (socket) => {
 });
 
 function sendTelegramNotification(message) {
-    const token = process.env.TELEGRAM_BOT_TOKEN;
-    const chatId = process.env.TELEGRAM_CHAT_ID;
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
 
-    if (!token || !chatId) {
-        return console.log("Variabel Telegram belum diatur di .env");
-    }
+  if (!token || !chatId) {
+    return console.log("Variabel Telegram belum diatur di .env");
+  }
 
-    const url = `https://api.telegram.org/bot${token}/sendMessage`;
-    axios.post(url, {
-        chat_id: chatId,
-        text: message
-    }).catch(err => {
-        console.error("Gagal mengirim notifikasi Telegram:", err.message);
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+  axios
+    .post(url, {
+      chat_id: chatId,
+      text: message,
+    })
+    .catch((err) => {
+      console.error("Gagal mengirim notifikasi Telegram:", err.message);
     });
 }
 
 // server.js
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Pastikan folder ada, jika tidak, buat folder tersebut
     const uploadPath = path.join(__dirname, "..", "public/uploads/");
     fs.mkdirSync(uploadPath, { recursive: true });
     cb(null, uploadPath);
   },
+  // --- UBAH BAGIAN FILENAME INI ---
+  filename: function (req, file, cb) {
+    // 1. Ambil nama asli dan ekstensinya
+    const originalName = file.originalname;
+    const extension = path.extname(originalName); // Mengambil ekstensi (misal: .mp4, .jpg)
+    const baseName = path.basename(originalName, extension); // Mengambil nama tanpa ekstensi
+
+    // 2. Bersihkan nama file (ganti spasi, hapus karakter aneh)
+    const safeBaseName = baseName
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-")
+      .substring(0, 50); // Batasi panjang nama
+
+    // 3. Gabungkan nama bersih + timestamp + ekstensi
+    const finalFilename = `${safeBaseName}-${Date.now()}${extension}`;
+
+    cb(null, finalFilename);
+  },
+  // --- AKHIR PERUBAHAN ---
 });
-const upload = multer({ storage: storage });
 
 // === API ENDPOINTS ===
 
 // ping
-app.get('/api/ping', (req, res) => res.status(200).send('pong'));
+app.get("/api/ping", (req, res) => res.status(200).send("pong"));
 
 // Auth
 app.post("/api/login", async (req, res) => {

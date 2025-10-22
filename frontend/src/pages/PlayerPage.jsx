@@ -95,6 +95,21 @@ function PlayerPage() {
     };
   }, [deviceId, fetchPlaylist, debouncedFetchPlaylist]);
 
+  useEffect(() => {
+    // Cek apakah browser mendukung Service Worker
+    if ("serviceWorker" in navigator) {
+      // Daftarkan file sw.js
+      navigator.serviceWorker
+        .register("/sw.js") // Pastikan path '/sw.js' benar
+        .then((registration) => {
+          console.log("Service Worker berhasil didaftarkan:", registration);
+        })
+        .catch((error) => {
+          console.error("Pendaftaran Service Worker gagal:", error);
+        });
+    }
+  }, []);
+
   // Fungsi untuk pindah ke item berikutnya
   const goToNextItem = useCallback(() => {
     // Gunakan isTransitioning
