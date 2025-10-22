@@ -135,6 +135,7 @@ const storage = multer.diskStorage({
   },
   // --- AKHIR PERUBAHAN ---
 });
+const upload = multer({ storage: storage });
 
 // === API ENDPOINTS ===
 
