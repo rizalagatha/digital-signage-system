@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import "./PlayerPage.css"; // Tetap gunakan CSS
 
-const API_BASE_URL = import.meta.env.VITE_SERVER_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function PlayerPage() {
   const { deviceId } = useParams();
