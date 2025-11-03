@@ -1,7 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import { useParams } from "react-router-dom";
-import "./PlayerPage.css"; // Tetap gunakan CSS
+import { io } from "socket.io-client";
+import debounce from "lodash/debounce";
+import "./PlayerPage.css";
 
+// Pastikan variabel ini sudah benar di file .env Anda
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function PlayerPage() {
@@ -9,60 +18,182 @@ function PlayerPage() {
   const [playlist, setPlaylist] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState("");
-  const [isMuted, setIsMuted] = useState(true); // State unmute kembali
+  const [isMuted, setIsMuted] = useState(true);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const videoRef = useRef(null);
   const imageTimerRef = useRef(null);
+  const socketRef = useRef(null);
 
-  // 1. Fetch data hanya sekali saat komponen dimuat
-  useEffect(() => {
-    const fetchInitialPlaylist = async () => {
+  // Fungsi untuk mengambil data playlist
+  const fetchPlaylist = useCallback(
+    async (isUpdate = false) => {
       try {
-        setError("");
         const response = await fetch(`${API_BASE_URL}/api/player/${deviceId}`);
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || "Playlist tidak ditemukan");
         }
-        const playlistData = await response.json();
-        setPlaylist(playlistData);
-        setCurrentIndex(0);
+        const newPlaylistData = await response.json();
+
+        setPlaylist((prevPlaylist) => {
+          if (
+            isUpdate &&
+            JSON.stringify(prevPlaylist?.Media) ===
+              JSON.stringify(newPlaylistData.Media)
+          ) {
+            return prevPlaylist;
+          }
+          setCurrentIndex(0);
+          return newPlaylistData;
+        });
+        setError("");
       } catch (err) {
         console.error("Gagal memuat playlist:", err);
         setError(err.message);
         setPlaylist(null);
       }
-    };
-    fetchInitialPlaylist();
-  }, [deviceId]);
+    },
+    [deviceId]
+  );
 
-  // 2. Fungsi sederhana untuk pindah ke item berikutnya
-  const goToNext = useCallback(() => {
-    if (!playlist?.Media?.length) return;
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % playlist.Media.length);
-  }, [playlist?.Media?.length, setCurrentIndex]);
+  // Fungsi debounce untuk fetch data
+  const debouncedFetchPlaylist = useMemo(
+    () =>
+      debounce(() => fetchPlaylist(true), 2000, {
+        leading: false,
+        trailing: true,
+      }),
+    [fetchPlaylist]
+  );
 
-  // 3. useEffect HANYA untuk timer gambar
+  // useEffect untuk koneksi, heartbeat, dan update playlist
   useEffect(() => {
-    if (imageTimerRef.current) clearTimeout(imageTimerRef.current);
+    fetchPlaylist(); // Ambil data saat pertama kali dimuat
+    const socket = io(API_BASE_URL);
+
+    socket.on("connect", () => {
+      console.log("Terhubung via WebSocket, mengirim ID:", deviceId);
+      socket.emit("player:join", deviceId);
+    });
+
+    socket.on("playlist:updated", () => {
+      console.log("Sinyal update diterima, memuat ulang playlist...");
+      debouncedFetchPlaylist();
+    });
+
+    const sendHeartbeat = () => {
+      fetch(`${API_BASE_URL}/api/devices/heartbeat/${deviceId}`, {
+        method: "PUT",
+      }).catch((err) => console.error("Gagal mengirim heartbeat:", err));
+    };
+    sendHeartbeat();
+    const heartbeatInterval = setInterval(sendHeartbeat, 60000);
+
+    socketRef.current = socket;
+
+    return () => {
+      debouncedFetchPlaylist.cancel();
+      clearInterval(heartbeatInterval);
+      socket.disconnect();
+    };
+  }, [deviceId, fetchPlaylist, debouncedFetchPlaylist]);
+
+  // useEffect untuk registrasi Service Worker (jika Anda masih menggunakannya)
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((registration) => {
+          console.log("Service Worker berhasil didaftarkan:", registration);
+        })
+        .catch((error) => {
+          console.error("Pendaftaran Service Worker gagal:", error);
+        });
+    }
+  }, []);
+
+  // Fungsi untuk pindah ke item berikutnya
+  const goToNextItem = useCallback(() => {
+    if (isTransitioning || !playlist?.Media?.length) return;
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % playlist.Media.length);
+      setIsTransitioning(false);
+    }, 500);
+  }, [playlist, isTransitioning]);
+
+  // useEffect untuk mengelola logika pemutaran (gambar & video)
+  useEffect(() => {
+    if (imageTimerRef.current) {
+      clearTimeout(imageTimerRef.current);
+      imageTimerRef.current = null;
+    }
+    if (window.playerKeepAliveInterval) {
+      clearInterval(window.playerKeepAliveInterval);
+      window.playerKeepAliveInterval = null;
+    }
+
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      videoElement.onended = null;
+      videoElement.onerror = null;
+      if (!videoElement.paused) {
+        videoElement.pause();
+      }
+    }
 
     const currentItem = playlist?.Media?.[currentIndex];
+    if (!currentItem) return;
 
-    if (currentItem?.type === "image") {
+    if (currentItem.type === "image") {
       const duration = (currentItem.PlaylistMedia?.duration || 10) * 1000;
-      imageTimerRef.current = setTimeout(goToNext, duration);
+      imageTimerRef.current = setTimeout(goToNextItem, duration);
+
+      window.playerKeepAliveInterval = setInterval(() => {
+        fetch(`${API_BASE_URL}/api/ping`).catch(() => {});
+      }, 30000);
+    } else if (currentItem.type === "video") {
+      const setupVideoTimeout = setTimeout(() => {
+        const currentVideoElement = videoRef.current;
+        if (currentVideoElement) {
+          currentVideoElement.onended = goToNextItem;
+          currentVideoElement.onerror = (e) => {
+            console.error(
+              "PLAYER ERROR: Gagal memuat video:",
+              currentItem.url,
+              e.target.error
+            );
+            setTimeout(goToNextItem, 1000);
+          };
+
+          const playPromise = currentVideoElement.play();
+          if (playPromise !== undefined) {
+            playPromise.catch((error) => {
+              if (error.name !== "AbortError") {
+                console.error("Autoplay video gagal:", error);
+                setTimeout(goToNextItem, 500);
+              }
+            });
+          }
+        }
+      }, 100);
+      imageTimerRef.current = setupVideoTimeout;
     }
 
     return () => {
       if (imageTimerRef.current) clearTimeout(imageTimerRef.current);
+      if (window.playerKeepAliveInterval)
+        clearInterval(window.playerKeepAliveInterval);
+      const videoElem = videoRef.current;
+      if (videoElem && !videoElem.paused) {
+        videoElem.pause();
+      }
     };
-  }, [currentIndex, playlist, goToNext]);
+  }, [currentIndex, playlist, goToNextItem, API_BASE_URL]); // API_BASE_URL ditambahkan untuk "ping"
 
-  // Fungsi handleUnmute kembali
   const handleUnmute = () => {
     setIsMuted(false);
-    if (videoRef.current) {
-      videoRef.current.muted = false;
-    }
+    if (videoRef.current) videoRef.current.muted = false;
   };
 
   // --- Render ---
@@ -77,13 +208,13 @@ function PlayerPage() {
   if (!playlist)
     return (
       <div className="player-container">
-        <p>Memuat playlist...</p>
+        <p>Memuat playlist untuk perangkat: {deviceId}...</p>
       </div>
     );
   if (!playlist.Media || playlist.Media.length === 0)
     return (
       <div className="player-container">
-        <p>Playlist kosong.</p>
+        <p>Playlist ini kosong.</p>
       </div>
     );
 
@@ -97,7 +228,6 @@ function PlayerPage() {
 
   return (
     <div className="player-container">
-      {/* Tombol Unmute kembali */}
       {currentItem.type === "video" && isMuted && (
         <button onClick={handleUnmute} className="unmute-button">
           🔇
@@ -109,7 +239,7 @@ function PlayerPage() {
           key={currentItem.id}
           src={currentItem.url}
           alt={currentItem.filename}
-          className="player-media"
+          className={`player-media ${isTransitioning ? "fading" : ""}`}
         />
       )}
       {currentItem.type === "video" && (
@@ -118,13 +248,16 @@ function PlayerPage() {
           ref={videoRef}
           src={currentItem.url}
           autoPlay
-          muted={isMuted} // Gunakan state isMuted
-          onEnded={goToNext}
-          onError={() => {
-            console.error("Gagal memuat video:", currentItem.url);
-            goToNext();
+          muted={isMuted}
+          onError={(e) => {
+            console.error(
+              "PLAYER ERROR: Gagal memuat video:",
+              currentItem.url,
+              e.target.error
+            );
+            setTimeout(goToNextItem, 1000);
           }}
-          className="player-media"
+          className={`player-media ${isTransitioning ? "fading" : ""}`}
         />
       )}
     </div>
